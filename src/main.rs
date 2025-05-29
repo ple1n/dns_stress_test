@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 use std::error::Error;
 use std::sync::Arc;
+use std::time::Duration;
 
 use console::Term;
 use dialoguer::Confirm;
@@ -19,12 +20,14 @@ use futures;
 
 #[tokio::main]
 async fn main() {
-    let (conf, opts) = read_system_conf().unwrap();
-    println!("{:?}", conf);
+    let (conf, mut opts) = read_system_conf().unwrap();
+    opts.attempts = 1;
+    opts.timeout = Duration::from_secs(5);
+    println!("{:?} \n {:?}", &conf, &opts);
     if !Confirm::new().interact().unwrap() {
         return;
     }
-    let mut rx = TokioResolver::builder_tokio().unwrap();
+    let mut rx = TokioResolver::builder_tokio().unwrap().with_options(opts);
     let opts = rx.options_mut();
     opts.cache_size = 0;
     let rx: Arc<
