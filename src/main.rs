@@ -38,7 +38,14 @@ async fn main() {
         >,
     > = Arc::new(rx.build());
     let t = Term::stdout();
-    bench(5000, rx, t).await.unwrap();
+    // find max concurrency
+
+    for n in [1e1, 1e2, 1e3, 1e4, 1e5, 1e6] {
+        if bench(n as usize, rx.clone(), t.clone()).await.unwrap() > 0 {
+            println!("max concurrency <= {}", n);
+            break;
+        }
+    }
 }
 
 async fn bench(
@@ -51,7 +58,7 @@ async fn bench(
         >,
     >,
     term: Term,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<usize, Box<dyn Error>> {
     let mut set = JoinSet::new();
     term.write_line("begin generating domains")?;
     let t = Instant::now();
@@ -88,7 +95,8 @@ async fn bench(
         "finished querying {:?} avg {:?}, err {}, total {}",
         took, avg, n_err, n
     ))?;
-    Ok(())
+
+    Ok(n_err)
 }
 
 fn rand_domain() -> String {
